@@ -40,4 +40,34 @@ class CustomUser(AbstractUser):
     
     def __str__(self):
         return self.email
+    
+
+class Profile(models.Model):
+    """
+        Profile model for store extra information users
+    """
+    class GenderChoice(models.TextChoices):
+        female = "0", "Female"
+        men = "1", "Men"
+        
+    user = models.OneToOneField(CustomUser, on_delete= models.CASCADE, related_name="profile")
+    mobile_number = models.CharField(
+        max_length= 11,
+        blank= True,
+        null= True,
+        validators=[
+           RegexValidator(
+               regex= r'^\d{11}$',
+               message= "Mobile number must be digit"
+           )
+        ])
+    
+    gender= models.CharField(max_length=1 , choices= GenderChoice, default=GenderChoice.female)
+    image = models.ImageField(upload_to='profile_images/', blank= True, null= True)
+    bio = models.TextField(blank= True, null= True)
+    latitude = models.DecimalField(max_digits= 8, decimal_places= 3)
+    longitude = models.DecimalField(max_digits= 8, decimal_places= 3)
+    
+    def __str__(self):
+        return self.user.email
         
