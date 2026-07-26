@@ -5,7 +5,8 @@ from django.core.validators import RegexValidator, MinLengthValidator
 from datetime import timedelta
 from django.utils import timezone
 from .managers import CustomeUserManager
-
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 # Create your models here.
 
 def curent_date():
@@ -50,7 +51,7 @@ class Profile(models.Model):
         female = "0", "Female"
         men = "1", "Men"
         
-    user = models.OneToOneField(CustomUser, on_delete= models.CASCADE, related_name="profile")
+    user = models.OneToOneField(CustomUser, on_delete= models.CASCADE)
     mobile_number = models.CharField(
         max_length= 11,
         blank= True,
@@ -65,9 +66,17 @@ class Profile(models.Model):
     gender= models.CharField(max_length=1 , choices= GenderChoice, default=GenderChoice.female)
     image = models.ImageField(upload_to='profile_images/', blank= True, null= True)
     bio = models.TextField(blank= True, null= True)
-    latitude = models.DecimalField(max_digits= 8, decimal_places= 3)
-    longitude = models.DecimalField(max_digits= 8, decimal_places= 3)
+    latitude = models.DecimalField(max_digits= 8, decimal_places= 3, blank= True, null= True)
+    longitude = models.DecimalField(max_digits= 8, decimal_places= 3, blank= True, null= True)
     
     def __str__(self):
         return self.user.email
         
+@receiver(post_save, sender= CustomUser)    
+def create_user_profile(sender, instance, created, **kwargs):
+    if created:
+        Profile.objects.create(user=instance)
+
+# @receiver(post_save, sender= CustomUser)  
+# def save_user_profile(sender, instance, **kwargs):
+#     instance.profile.save()
