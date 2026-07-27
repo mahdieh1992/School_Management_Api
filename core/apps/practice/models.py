@@ -22,19 +22,19 @@ class Practice(BaseModel):
     def __str__(self):
         return f"{self.title}-{self.created_by}"
     
-# class PracticeAnswer(BaseModel):
-#     """
-#      Representaion practice answers 
-#     """
-#     practice = models.ForeignKey(Practice, on_delete= models.CASCADE, related_name="practice_answer")
-#     user = models.ForeignKey(User, on_delete= models.CASCADE, related_name="practice_answer")
-#     answer = models.TextField(blank= True, null= True)
-#     attachment = models.FileField(upload_to="upload_practice/")
+class PracticeAnswer(models.Model):
+    """
+     Representaion practice answers 
+    """
+    practice = models.ForeignKey(Practice, on_delete= models.CASCADE, related_name="practice_answer")
+    user = models.ForeignKey(User, on_delete= models.CASCADE, related_name="practice_answer")
+    answer = models.TextField(blank= True, null= True)
+    attachment = models.FileField(upload_to="upload_practice/")
     
-#     class Meta:
-#         verbose_name = "Practice Answer"
-#         verbose_name_plural = "Practices Answer"
+    class Meta:
+        verbose_name = "Practice Answer"
+        verbose_name_plural = "Practices Answer"
     
-#     def __str__(self):
-#         return f"{self.practice.title[:10]}-{self.user}"
+    def __str__(self):
+        return f"{self.practice.title[:10]}-{self.user}"
     

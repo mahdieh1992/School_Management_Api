@@ -51,7 +51,6 @@ class Lesson(BaseModel):
         return self.title
     
     def save(self, *args, **kwargs):
-        self.code += 5
         self.title = self.title.strip().title()
         return super().save(*args, **kwargs)
     
