@@ -40,7 +40,11 @@ INSTALLED_APPS = [
     'apps.school',
     'apps.practice',
     'apps.news',
-    'apps.chat'
+    'apps.chat',
+    # restframework
+    'rest_framework',
+    # Token authentication
+    # 'rest_framework.authtoken'
 ]
 
 MIDDLEWARE = [
@@ -125,3 +129,11 @@ STATIC_URL = 'static/'
 
 
 AUTH_USER_MODEL = "accounts.CustomUser"
+
+# config restframework
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.SessionAuthentication',
+        # 'rest_framework.authentication.TokenAuthentication',
+    ],
+}
