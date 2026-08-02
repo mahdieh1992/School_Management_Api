@@ -12,6 +12,8 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 
 from decouple import config
 from pathlib import Path
+from datetime import timedelta
+
 
 
 
@@ -41,11 +43,12 @@ INSTALLED_APPS = [
     'apps.practice',
     'apps.news',
     'apps.chat',
-    # restframework
+    
+    # Third-party apps
     'rest_framework',
-    # Token authentication
-    # 'rest_framework.authtoken'
+    'rest_framework.authtoken',  # Add this line!
     'drf_yasg',
+    'rest_framework_simplejwt',
 ]
 
 MIDDLEWARE = [
@@ -135,6 +138,14 @@ AUTH_USER_MODEL = "accounts.CustomUser"
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.SessionAuthentication',
-        # 'rest_framework.authentication.TokenAuthentication',
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
     ],
+}
+
+# jwt setting 
+# Django project settings.py
+
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=30),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
 }
