@@ -1,11 +1,16 @@
 from django.urls import path
-from .views import UserListView, UserDetailView, LoginUserApi, LogoutUserApi
+from .views import UserRegisterApiView, UserViewSet, UserLoginView, ChangePasswordView
+from rest_framework.routers import DefaultRouter
 
-app_name = 'accounts'
+router = DefaultRouter()
+router.register(r'users', UserViewSet, basename="user")
 
+app_name = 'users'
 urlpatterns = [
-    path("accounts/", UserListView.as_view(),name="register"),
-    path("accounts/<int:pk>/", UserDetailView.as_view(), name= "user_detail"),
-    path("accounts/login/", LoginUserApi.as_view(), name="login_user"),
-    path("accounts/logout/", LogoutUserApi.as_view(), name="logout_user")
+    path("user/register/", UserRegisterApiView.as_view(), name= "register"),
+    path("user/login/", UserLoginView.as_view(), name="login"),
+    path("user/change_password/", ChangePasswordView.as_view(), name="change_password" )
 ]
+
+urlpatterns += router.urls
+

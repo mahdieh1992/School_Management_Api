@@ -1,3 +1,4 @@
+from typing import Iterable
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.utils.translation import gettext_lazy as _
@@ -42,7 +43,10 @@ class CustomUser(AbstractUser):
     def __str__(self):
         return self.email
     
-    
+    def save(self, *args, **kwargs):
+        self.username = self.email
+        return super().save(*args, **kwargs)
+
 
 class Profile(models.Model):
     """

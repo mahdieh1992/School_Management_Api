@@ -1,90 +1,109 @@
-from rest_framework import status
+from rest_framework import generics
+from django.contrib.auth import get_user_model, authenticate
+from .serializers import UserRegisterSerializer, UserSerializer, UserLoginSerializer, ChangPasswordSerializer
+from rest_framework.permissions import AllowAny
+from rest_framework import mixins, viewsets
 from rest_framework.response import Response
-from rest_framework.views import APIView
-from .serializers import UserRegisterationSerializer, UserSerializer
-from django.contrib.auth import get_user_model
-from django.http import Http404
+from rest_framework import status
+from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.authtoken.models import Token
-from rest_framework.authentication import TokenAuthentication
-from .serializers import LoginUserSerializer
-from django.contrib.auth import authenticate
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.views import APIView
+from rest_framework_simplejwt.tokens import RefreshToken
 
 User = get_user_model()
 
-class UserListView(APIView):
-    """ 
-        List all user and create new user
-    """
-    serializer_class = UserRegisterationSerializer
-    
-    def get_serializer(self, *args, **kwargs):
-        return self.serializer_class(*args, **kwargs)
-    
-      
-    def get(self, request):
-        user = User.objects.all()
-        serializer = UserSerializer(user, many= True)
-        return Response(serializer.data)
-    
-    def post(self, request):
-        serializer = self.get_serializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response({
-                "message":"User Registered successfull"},
-                status=status.HTTP_201_CREATED
-                )
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-  
+class UserRegisterApiView(generics.CreateAPIView):
+    """ Api endpoint for user registeration
 
-class UserDetailView(APIView):
-    """ 
-        Retrieve Update Delete for a user instance
+    Method:
+        POST: Create a new user account.
     """
-    def get_object(self, pk):
-        try:
-            return User.objects.get(pk = pk)
-        except User.DoesNotExist:
-            raise Http404
-        
-    def get(self, request, pk, format=None):
-        user = self.get_object(pk=pk)
-        serializer = UserSerializer(user)
-        return Response(serializer.data)
-    
-    def put(self, request, pk):
-        user = self.get_object(pk=pk)
-        serializer = UserSerializer(user, data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status= status.HTTP_400_BAD_REQUEST)
-    
-    def delete(self, request, pk):
-        user = self.get_object(pk=pk)
-        user.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
-    
-class LoginUserApi(APIView):
-    """ 
-        Login users with TokenAuthentication
-    """
-    serializer_class = LoginUserSerializer
-    authentication_classes = [TokenAuthentication]
-    
+    serializer_class = UserRegisterSerializer
+    permission_classes= [AllowAny]
     def post(self, request, *args, **kwargs):
-        serializer = LoginUserSerializer(data=request.data)
-        if serializer.is_valid(raise_exception=True):
-            user = authenticate(username=serializer.data['username'],password=serializer.data['password'])
-            if user:
-                token, created = Token.objects.get_or_create(user=user)
-                return Response({'Token': [token.key], 'detail': 'Login User Successfully'})
-            return Response({"Message":"Invalid username or password"}, status=status.HTTP_401_UNAUTHORIZED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        serializer = self.serializer_class(data= request.data)
+        serializer.is_valid(raise_exception= True)
+        user = serializer.save()
+        token = RefreshToken.for_user(user)
+        data = serializer.data
+        data['token']= {"refresh": str(token), "access": str(token.access_token)}
+        return Response(data, status=status.HTTP_201_CREATED)
+        
     
-class LogoutUserApi(APIView):
+class UserViewSet(mixins.ListModelMixin,
+    mixins.RetrieveModelMixin,
+    mixins.UpdateModelMixin,
+    mixins.DestroyModelMixin,
+    viewsets.GenericViewSet,):
+    
+    """ 
+        ViewSet for listing or retrieving users.
+    method:
+        get, put,partial_update, delete
+    """
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+    permission_classes = [IsAuthenticated,IsAdminUser]
+    
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many = True)
+        return Response(serializer.data, status= status.HTTP_200_OK)
+
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance)
+        return Response({
+            "user": serializer.data, 
+            "message": "User Retrieve successfully"},
+            status= status.HTTP_200_OK)
+   
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        if "email" in request.data:
+            return Response(
+                {"message": "You cannot change your email"},
+                status= status.HTTP_400_BAD_REQUEST
+            )
+        serializer = self.get_serializer(instance, data=request.data)
+        if serializer.is_valid(raise_exception= True):
+            self.perform_update(serializer)
+            return Response({
+                "message": "Update user successfully"
+            }, status= status.HTTP_200_OK)
+    
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        self.perform_destroy(instance)
+        response= Response(status= status.HTTP_204_NO_CONTENT)
+        response['X-Message']= "User deleted successfully"
+        return response
+    
+class UserLoginView(generics.GenericAPIView):
+    """ 
+        Login user with jwt token
+    """
+    serializer_class = UserLoginSerializer
+    def post(self, request, *args, **kwargs):
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception= True)
+        user = serializer.validated_data
+        data = serializer.data
+        token = RefreshToken.for_user(user)
+        data['token']= {"refresh": str(token), "access": str(token.access_token)}
+        return Response(data, status=status.HTTP_200_OK)
+    
+class ChangePasswordView(generics.UpdateAPIView):
+    """
+        Update API for changing user's password.
+    """
+    serializer_class = ChangPasswordSerializer
     permission_classes = [IsAuthenticated]
-    def get(self, request):
-        request.user.auth_token.delete()
-        return Response(status=status.HTTP_200_OK)
+    def update(self, request, *args, **kwargs):
+        instance = self.request.user
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception= True)
+        instance.set_password(serializer.validated_data["new_password"])
+        instance.save()
+        return Response({"message":"Password updated successfully"}, status= status.HTTP_200_OK)
+     

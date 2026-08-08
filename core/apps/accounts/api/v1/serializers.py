@@ -1,40 +1,71 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
+from django.contrib.auth import password_validation as validator
+from django.contrib.auth import authenticate
+from django.contrib.auth.hashers import check_password
 
 User = get_user_model()
 
-class UserRegisterationSerializer(serializers.ModelSerializer):
-    password1 = serializers.CharField(style={'input_type': 'password'}, write_only = True)
+class UserRegisterSerializer(serializers.ModelSerializer):
+    confirm_password = serializers.CharField(style={'input_type': 'password'}, write_only=True)
+    password = serializers.CharField(style={'input_type': 'password'}, write_only=True)
     class Meta:
         model = User
-        fields = ["email", "username", "first_name", "last_name", "national_code","password", "password1"]
-        extra_kwargs = {
-            'password': {'write_only': True
-                         }
-        }
+        fields = ("email", "password","confirm_password", "first_name", "last_name", "national_code")
         
     def validate(self, attrs):
-        if attrs['password'] != attrs['password1']:
-            raise serializers.ValidationError({"password": "Password fields didn't match."})
+        try:
+            validator.validate_password(attrs['password'])
+        except Exception as e:
+            raise serializers.ValidationError(list(e.messages))
+        
+        if attrs['password'] != attrs['confirm_password']:
+            raise serializers.ValidationError("password and confirm_password must be equal")
+        
         return attrs
-    
+        
     def create(self, validated_data):
-        user = User.objects.create_user(
-            email= validated_data["email"],
-            username= validated_data["username"],
-            first_name = validated_data["first_name"],
-            last_name = validated_data["last_name"],
-            national_code = validated_data["national_code"],
-            password = validated_data["password"]
-        )
+        validated_data.pop('confirm_password')
+        user = User.objects.create_user(**validated_data)
         return user
     
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ["id","email", "first_name", "last_name", "is_registered", "national_code"]
+        fields= ("email", "first_name", "last_name", "national_code", "is_registered")
         
-class LoginUserSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = User
-        fields = ("username","password")
+class UserLoginSerializer(serializers.Serializer):
+    email = serializers.CharField()
+    password = serializers.CharField(style = {'input_type': 'password'}, write_only = True)
+    
+    def validate(self, attrs):
+        email = attrs.get('email')
+        password = attrs.get('password')  
+        user = authenticate(email = email , password= password)
+        if not user:
+            raise serializers.ValidationError("email or passwor is not correct")
+        return user
+    
+    
+class ChangPasswordSerializer(serializers.Serializer):
+    old_password = serializers.CharField(style={'input_type':'password'}, write_only = True)
+    new_password = serializers.CharField(style={'input_type':'password'}, write_only = True)
+    confirm_password = serializers.CharField(style={'input_type':'password'}, write_only = True)
+
+    def validate(self, attrs):
+        user = self.context['request'].user
+        new_password = attrs['new_password']
+        confirm_password= attrs['confirm_password']
+        old_password = attrs['old_password']
+        if not check_password(old_password, user.password):
+            raise serializers.ValidationError({"old_password": "Old password is not correct."})
+        elif new_password != confirm_password:
+            raise serializers.ValidationError({"new_password and confirm_password must be equal"})
+        else:
+            try:
+                validator.validate_password(new_password)
+            except Exception as e:
+                raise serializers.ValidationError({"detail": list(e.messages)})
+            return attrs
+                
+            
