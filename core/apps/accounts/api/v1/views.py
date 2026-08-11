@@ -10,6 +10,7 @@ from rest_framework.authtoken.models import Token
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 
+
 User = get_user_model()
 
 class UserRegisterApiView(generics.CreateAPIView):
@@ -106,4 +107,16 @@ class ChangePasswordView(generics.UpdateAPIView):
         instance.set_password(serializer.validated_data["new_password"])
         instance.save()
         return Response({"message":"Password updated successfully"}, status= status.HTTP_200_OK)
-     
+    
+class LogoutUserView(APIView):
+    """
+        Api endpoint for logout users
+    """
+    def post(self, request):
+        try:
+            refresh_token = request.data['refresh_token']
+            token = RefreshToken(refresh_token)
+            token.blacklist()
+            return Response(status= status.HTTP_205_RESET_CONTENT)
+        except Exception as e:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
