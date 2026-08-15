@@ -3,6 +3,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth import password_validation as validator
 from django.contrib.auth import authenticate
 from django.contrib.auth.hashers import check_password
+from ...models import Profile
 
 User = get_user_model()
 
@@ -32,7 +33,7 @@ class UserRegisterSerializer(serializers.ModelSerializer):
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields= ("email", "first_name", "last_name", "national_code", "is_registered")
+        fields= ("id","email", "first_name", "last_name", "national_code", "is_registered")
         
 class UserLoginSerializer(serializers.Serializer):
     email = serializers.CharField()
@@ -67,5 +68,13 @@ class ChangPasswordSerializer(serializers.Serializer):
             except Exception as e:
                 raise serializers.ValidationError({"detail": list(e.messages)})
             return attrs
+        
+class ProfileUserSerializer(serializers.ModelSerializer):
+    user = serializers.EmailField(source = "user.email", read_only = True)
+    class Meta:
+        model = Profile
+        fields = ["user","mobile_number", "gender", "image", "bio", "latitude", "longitude"]
+       
+                
                 
             
