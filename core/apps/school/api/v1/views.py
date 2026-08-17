@@ -1,11 +1,10 @@
 from rest_framework import viewsets, mixins, generics
-from ...models import School
+from ...models import School, Lesson, ClassRoom
 from django.contrib.auth import get_user_model
 from rest_framework.permissions import IsAdminUser, IsAuthenticated
-from .serializers import SchoolSerializer, NearestSchoolSerializer
+from .serializers import SchoolSerializer, NearestSchoolSerializer, LessonSerializer, ClassRoomSerializer
 from geopy.distance import geodesic
 from apps.accounts.models import Profile
-from django.shortcuts import get_object_or_404
 from rest_framework.response import Response
 
 class SchoolViewSet(
@@ -23,7 +22,7 @@ class SchoolViewSet(
     serializer_class = SchoolSerializer
     permission_classes = [IsAuthenticated, IsAdminUser]
     
-class NearestSchoolView(generics.ListAPIView):
+class SchoolNearestListView(generics.ListAPIView):
     """
         Calculate the distance to each school and return them sorted by proximity.
     """
@@ -42,4 +41,27 @@ class NearestSchoolView(generics.ListAPIView):
         serializer = self.get_serializer(queryset, many= True) 
         return Response(serializer.data)
 
+class LessonViewSet(viewsets.ModelViewSet):
+    queryset = Lesson.objects.all()
+    serializer_class = LessonSerializer
+    permission_classes = [IsAuthenticated, IsAdminUser]
+    
+class ClassRoomViewSet(
+    mixins.ListModelMixin,
+    mixins.CreateModelMixin,
+    mixins.UpdateModelMixin,
+    mixins.DestroyModelMixin,
+    mixins.RetrieveModelMixin,
+    viewsets.GenericViewSet,):
+    
+    """
+        api endpoint for class_room
+    """
+    
+    queryset = ClassRoom.objects.all()
+    serializer_class = ClassRoomSerializer
+    permission_classes = [IsAuthenticated, IsAdminUser]
+    
+
+    
     
