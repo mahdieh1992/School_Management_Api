@@ -11,7 +11,7 @@ class NewsAdmin(admin.ModelAdmin):
     
 @admin.register(NewsReceiver)
 class NewsReceiverAdmin(admin.ModelAdmin):
-    list_display= ["news", "student", "is_read", "read_date", "is_active"]
+    list_display= ["id", "news", "student", "is_read", "read_date", "is_active"]
     list_editable = ["is_active"]
     list_filter = ["is_active"]
     search_fields = ["news"]

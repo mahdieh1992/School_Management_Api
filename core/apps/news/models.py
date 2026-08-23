@@ -34,5 +34,5 @@ class NewsReceiver(BaseModel):
         verbose_name_plural = "News Receivers"
         
     def __str__(self):
-        return f"{self.student.email} - {self.news.title}"
+        return f"{self.student.email}"
     

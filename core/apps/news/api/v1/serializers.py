@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from ...models import News
+from ...models import News, NewsReceiver
 from ....school.models import ClassRoom
 from django.contrib.auth import get_user_model
 
@@ -15,4 +15,11 @@ class NewsSerializer(serializers.ModelSerializer):
             self.fields["class_room"].queryset = ClassRoom.objects.filter(teacher = request.user)
     class Meta:
         model = News
-        fields = ["title", "body", "class_room","created_by"]
+        fields = ["id","title", "body", "class_room","created_by"]
+
+
+class NewsReceiverSerializer(serializers.ModelSerializer):         
+    news = serializers.SlugRelatedField(queryset=News.objects.none(),slug_field="title")
+    class Meta:
+        model = NewsReceiver
+        fields = ["id","news", "student", "is_read", "read_date"]
