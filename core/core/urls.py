@@ -43,6 +43,7 @@ urlpatterns = [
     path("api/v1/", include("apps.accounts.api.v1.urls")),
     path("api/v1/", include("apps.school.api.v1.urls")),
     path("api/v1/", include("apps.news.api.v1.urls")),
+    path("api/v1/", include("apps.practice.api.v1.urls")),
     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
     path('redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
